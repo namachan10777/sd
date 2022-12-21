@@ -95,6 +95,7 @@ pub mod tokio {
         keepalive: Duration,
         interval: Option<Duration>,
         timeout: Option<Duration>,
+        name: Option<Name>,
         reqwest_client: Option<reqwest::Client>,
     }
 
@@ -126,6 +127,7 @@ pub mod tokio {
             Self {
                 endpoint,
                 tag,
+                name: None,
                 keepalive: Duration::from_secs(30),
                 interval: None,
                 timeout: None,
@@ -150,6 +152,11 @@ pub mod tokio {
 
         pub fn http_client(&mut self, client: reqwest::Client) -> &mut Self {
             self.reqwest_client = Some(client);
+            self
+        }
+
+        pub fn name(&mut self, name: Option<Name>) -> &mut Self {
+            self.name = name;
             self
         }
 
@@ -203,6 +210,7 @@ pub mod tokio {
             let keepalive = self.keepalive;
             let interval = self.interval.unwrap_or(keepalive / 2);
             let timeout = self.timeout.unwrap_or(interval / 4);
+            let name = self.name.clone();
             let client = self
                 .reqwest_client
                 .as_ref()
@@ -221,7 +229,7 @@ pub mod tokio {
             let (internal_tx, mut internal_rx) = mpsc::channel(1024);
             let (tx, rx) = mpsc::channel(1024);
 
-            let name = Arc::new(RwLock::new(None));
+            let name = Arc::new(RwLock::new(name));
             let alive = Arc::new(AtomicBool::new(false));
             let tag = Tag(self.tag.clone());
 
